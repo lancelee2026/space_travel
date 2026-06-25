@@ -52,21 +52,19 @@ isProject: false
 
 ---
 
-## 一、对话记录鉴定（真伪与缺口）
+## 一、技术基座与选型评估
 
-### 结论：方向 80% 正确，但有几处会直接导致 vibe coding 翻车
+### 核心依赖与代码来源说明
 
-| 论断 | 鉴定 | 影响 |
+| 技术选型 | 评估结论 | 实施影响 |
 |------|------|------|
-| `MisterPrada/singularity` 可作基座 | **真** — 290 stars，Live demo，Three.js + TSL + WebGPU，纯 raymarching 黑洞 | 正确选型 |
-| `dgreenheck/webgpu-galaxy` 可作星场参考 | **真** — MIT 许可，TSL compute + `instancedArray`，已含 Bloom + Tweakpane | 正确参考 |
-| r183 `PostProcessing` → `RenderPipeline` | **真** — [PR #32789](https://github.com/mrdoob/three.js/pull/32789)，API 相同 | AI 生成代码必须用新名 |
-| r184 大量 mesh 首帧卡顿 ~15s | **真但对此项目相关性低** — [#33685](https://github.com/mrdoob/three.js/issues/33685)；Singularity 几乎无 mesh，是单 sphere raymarch | 星场粒子要用 **InstancedMesh/Sprite 共享材质**，禁止每颗星 unique `colorNode` |
-| `dgreenheck/threejs-procedural-planets` vibe 友好 | **半假** — 该项目是 **WebGL + GLSL 字符串**，不是 TSL/WebGPU；直接 merge 会双渲染器地狱 | 行星阶段应改做 **TSL 噪声球体** 或 **raymarch 远景行星**，勿整仓 import |
-| Poly Haven HDRI 提升真实感 | **真** | 8K EXR 不要打进 bundle，走 R2 CDN |
-| 「2-3 天完整愿景」 | **偏乐观** — C 档（星场 + Bloom + 行星 + 部署 + 科普 UX + 移动端） realistic **7–9 天** | 见第十节时间线 |
+| `MisterPrada/singularity` 作为基座 | **推荐** — 290 stars，Live demo，Three.js + TSL + WebGPU，纯 raymarching 黑洞。 | 可作为项目的物理核心。 |
+| `dgreenheck/webgpu-galaxy` 作为星场参考 | **推荐** — MIT 许可，TSL compute + `instancedArray`，含 Bloom。 | 提取其星场逻辑，但需剥离多余 UI。 |
+| Three.js r183+ 版本 `RenderPipeline` | **必选项** — [PR #32789](https://github.com/mrdoob/three.js/pull/32789)，新版 API 更替。 | AI 生成后期代码时必须使用新命名，禁止使用旧版 `PostProcessing`。 |
+| `dgreenheck/threejs-procedural-planets` | **不兼容** — 该项目基于 **WebGL + GLSL 字符串**，而非 TSL/WebGPU。 | 若直接 merge 会导致双渲染器地狱。行星必须用 **纯图片贴图** 或 **TSL 噪声球体**。 |
+| Poly Haven HDRI 作为环境光 | **可选用** | 注意：8K EXR 体积过大，禁止打进 bundle，应通过外部 CDN 引入。 |
 
-### 两段 AI 对话都没说的 4 个硬坑
+### Vibe Coding 的 6 个硬核大坑预警
 
 1. **Singularity 无开源 License**（GitHub `license: null`）— 只能作学习/参考 fork；公开部署前建议给作者发 issue 要许可，或重写核心 shader（Three.js Roadmap 有完整教程可对照）。
 2. **Singularity 已自带 Tweakpane + 内置 bloom/星场**（`package.json` 含 `tweakpane@4`，topics 含 `bloom`；[`Renderer.js`](https://github.com/MisterPrada/singularity/blob/master/src/Experience/Renderer.js) 直接用 `renderAsync`，非 `RenderPipeline`）— 不是「从零加 Bloom」，而是 **升级 three 版本 + 决定是否迁移 RenderPipeline**。
