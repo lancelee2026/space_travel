@@ -200,24 +200,14 @@ e2n-cosmos/
 
 ---
 
-## 四、`.agents` Skills 借调与视觉规范
+## 四、UI/UX 设计系统与视觉规范
 
-每次做 **overlay / 科普 UI** 前，按此顺序激活：
+在生成 **科普 UI (Overlay)** 时，AI Agent 必须自行运用现代前端设计系统，并严格遵循以下规范：
 
-| 顺序 | Skill | 用途 |
-|------|-------|------|
-| 1 | [ui-ux-pro-max](.agents/skills/ui-ux-pro-max/SKILL.md) | **Kids Learning (#152)** + **Educational App (#9)** + **Museum/Gallery (#76)**；触控 44px、reduced-motion、渐进披露 |
-| 2 | [ckm-design-system](.agents/skills/ckm-design-system/SKILL.md) | 生成 `assets/design-tokens.css`（primitive→semantic→component） |
-| 3 | [ckm-ui-styling](.agents/skills/ckm-ui-styling/SKILL.md) | overlay 状态、对比度、响应式 |
-| 4 | [ckm-brand](.agents/skills/ckm-brand/SKILL.md) | 可选：e2n 子域 footer 品牌一致性 |
-| 5 | [tailwind-responsive.md](.agents/skills/ckm-ui-styling/references/tailwind-responsive.md) | 移动端断点清单（320/640/1024；44px 触控区） |
-
-**ui-ux-pro-max 移动端必查**（Phase 1 实施前）：
-```bash
-python scripts/search.py "mobile immersive fullscreen touch orbit" --domain ux
-python scripts/search.py "safe-area viewport dvh reduced-motion" --domain web
-python scripts/search.py "bottom sheet modal swipe dismiss" --domain ux
-```
+1. **整体风格 (Kids Learning & Immersive)**：采用 Claymorphism (粘土拟物风) 或 Glassmorphism (玻璃拟物风)，保证大圆角与柔和的层级阴影，提升界面的亲和力。
+2. **响应式设计**：移动端优先（适配 320px - 430px），桌面端自适应平铺。
+3. **触控与无障碍**：所有可交互元素（按钮、热点）的最小触控区域必须 ≥ 44x44px；知识卡文本对比度须达到 WCAG 4.5:1。
+4. **渐进披露 (Progressive Disclosure)**：避免文字堆砌，使用 Bottom Sheet（底部抽屉）或卡片式弹窗按需展示科普内容。
 
 **HUD 配色**：主色 `#2563EB` + accent `#F59E0B` + 强调 `#EC4899`；卡片 Claymorphism + `backdrop-blur`（WCAG 4.5:1）；动效 soft press 200ms。
 
@@ -392,7 +382,7 @@ pages_build_output_dir = "dist"
 - Build: `npm run build`；Output: `dist`
 - 绑定 `[你的自定义域名]` CNAME
 - `localStorage` 进度；`?tour=1` 深链
-- WebGPU fallback：静态 poster + 移动 Bottom Sheet 文字导览（[ckm-banner-design](.agents/skills/ckm-banner-design/SKILL.md) 可辅助 poster）
+- WebGPU fallback：静态 poster + 移动 Bottom Sheet 文字导览
 
 ---
 
