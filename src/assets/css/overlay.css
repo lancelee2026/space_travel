@@ -41,6 +41,7 @@
   inset: 0;
   z-index: 8;
   pointer-events: none;
+  transition: opacity 0.3s ease;
 }
 
 .cosmos-hud[hidden],
@@ -345,8 +346,7 @@
 .cosmos-quest-dock {
   position: absolute;
   left: calc(12px + var(--safe-left));
-  right: calc(12px + var(--safe-right));
-  bottom: calc(76px + var(--safe-bottom));
+  top: calc(12px + var(--safe-top));
   z-index: 20;
   display: flex;
   flex-direction: column;

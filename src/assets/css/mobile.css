@@ -24,11 +24,6 @@ body {
     justify-content: center;
   }
 
-  .cosmos-hud {
-    justify-content: space-between;
-    padding: 0 24px;
-  }
-
   .cosmos-tour-bar {
     left: 50%;
     right: auto;

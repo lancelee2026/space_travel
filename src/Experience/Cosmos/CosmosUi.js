@@ -88,6 +88,7 @@ export default class CosmosUi {
                     <button type="button" class="cosmos-hud__btn" id="cosmos-hud-explore" aria-label="自由探索" aria-pressed="true">${ icon( 'explore' ) }</button>
                     <button type="button" class="cosmos-hud__btn" id="cosmos-hud-tour" aria-label="导览模式" aria-pressed="false">${ icon( 'tour' ) }</button>
                     <button type="button" class="cosmos-hud__btn" id="cosmos-hud-fly" aria-label="飞近行星">${ icon( 'planet' ) }</button>
+                    <button type="button" class="cosmos-hud__btn" id="cosmos-hud-labels" aria-label="隐藏标签" aria-pressed="false" title="隐藏标签">${ icon( 'eyeOff' ) }</button>
                     <button type="button" class="cosmos-hud__btn" id="cosmos-hud-share" aria-label="分享进度">${ icon( 'share' ) }</button>
                 </div>
             </div>
@@ -104,6 +105,7 @@ export default class CosmosUi {
         this.root.querySelector( '#cosmos-hud-explore' ).addEventListener( 'click', () => this._enterExplore() )
         this.root.querySelector( '#cosmos-hud-tour' ).addEventListener( 'click', () => this._enterTour() )
         this.root.querySelector( '#cosmos-hud-fly' ).addEventListener( 'click', () => this._flyToPlanet() )
+        this.root.querySelector( '#cosmos-hud-labels' ).addEventListener( 'click', () => this._toggleLabels() )
         this.root.querySelector( '#cosmos-hud-share' ).addEventListener( 'click', () => this._share() )
     }
 
@@ -140,6 +142,23 @@ export default class CosmosUi {
         this._setHudMode( 'tour' )
         this._setCanvasPointer( false )
         this.tour.start()
+    }
+
+    _toggleLabels() {
+        const btn = this.root.querySelector( '#cosmos-hud-labels' )
+        const isHidden = btn.getAttribute( 'aria-pressed' ) === 'true'
+        
+        if ( isHidden ) {
+            btn.setAttribute( 'aria-pressed', 'false' )
+            btn.innerHTML = icon( 'eyeOff' )
+            this.discovery.layer.style.opacity = '1'
+            this.discovery.layer.style.pointerEvents = 'auto'
+        } else {
+            btn.setAttribute( 'aria-pressed', 'true' )
+            btn.innerHTML = icon( 'eye' )
+            this.discovery.layer.style.opacity = '0'
+            this.discovery.layer.style.pointerEvents = 'none'
+        }
     }
 
     _finishTour() {
