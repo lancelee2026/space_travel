@@ -97,13 +97,13 @@ flowchart TB
   subgraph placement [部署]
     Repo[独立 GitHub repo e2n-cosmos]
     CF[Cloudflare Pages]
-    Domain["space.e2n.studio"]
+    Domain["[你的自定义域名]"]
   end
   engine --> product
   product --> placement
 ```
 
-**一句话**：`space.e2n.studio` = 浏览器里的「深空科技馆」— 小孩自己点、自己发现；家长可切换「共读模式」看稍深的解释。视觉震撼是**教具**，不是终点。
+**一句话**：你的在线项目 = 浏览器里的「深空科技馆」— 小孩自己点、自己发现；家长可切换「共读模式」看稍深的解释。视觉震撼是**教具**，不是终点。
 
 - **不是**研究 WebGPU 标准或写论文级物理模拟
 - **是**儿童互动天文科普：fullscreen 体验 + 参数可调（dev）+ 部署后可分享
@@ -390,7 +390,7 @@ pages_build_output_dir = "dist"
 ```
 
 - Build: `npm run build`；Output: `dist`
-- `space.e2n.studio` CNAME
+- 绑定 `[你的自定义域名]` CNAME
 - `localStorage` 进度；`?tour=1` 深链
 - WebGPU fallback：静态 poster + 移动 Bottom Sheet 文字导览（[ckm-banner-design](.agents/skills/ckm-banner-design/SKILL.md) 可辅助 poster）
 
@@ -432,11 +432,11 @@ flowchart TD
 
 ---
 
-## 九、与 e2n 品牌的关系（可选，非 MVP）
+## 九、与主站品牌的关系（可选，非 MVP）
 
-- 官网 [e2n.studio](https://e2n.studio) **不进主导航**
-- footer 或 social 链到 `space.e2n.studio` 作彩蛋体验
-- 无需 i18n / Pages Functions / Supabase
+- 官网 **不进主导航**
+- footer 或 social 链到你的 `[深空引擎子域名]` 作彩蛋体验
+- 无需 i18n / Pages Functions / 复杂后端逻辑
 
 ---
 
