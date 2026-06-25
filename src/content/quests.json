@@ -6,10 +6,10 @@
     "hotspotId": "accretion-disk"
   },
   {
-    "id": "three-colors",
-    "title": "认识背景恒星",
-    "description": "点击恒星热点，了解颜色与温度的关系。",
-    "hotspotId": "background-stars"
+    "id": "main-star",
+    "title": "查看主恒星",
+    "description": "点击主恒星热点，把恒星的知识告诉爸爸妈妈。",
+    "hotspotId": "sun"
   },
   {
     "id": "fly-planet",

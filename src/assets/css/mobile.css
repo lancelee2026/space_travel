@@ -4,7 +4,8 @@ body {
 }
 
 .cosmos-ui--mobile .cosmos-quest-dock {
-  bottom: calc(80px + var(--safe-bottom));
+  top: calc(16px + var(--safe-top));
+  bottom: auto;
   max-width: none;
 }
 
