@@ -17,6 +17,8 @@ import PostProcess from './Utils/PostProcess.js'
 
 import { isMobile } from '@experience/Utils/Helpers/Global/isMobile';
 import Ui from "@experience/Ui/Ui.js";
+import CosmosUi from "@experience/Cosmos/CosmosUi.js";
+import DeviceProfile from "@experience/Cosmos/DeviceProfile.js";
 
 export default class Experience extends EventEmitter {
 
@@ -62,8 +64,10 @@ export default class Experience extends EventEmitter {
     }
 
     init() {
-        // Start Loading Resources
+        this._initAsync()
+    }
 
+    async _initAsync() {
         // Setup
         this.timeline = gsap.timeline({
             paused: true,
@@ -72,12 +76,13 @@ export default class Experience extends EventEmitter {
         this.sizes = new Sizes()
         this.time = new Time()
         this.ui = new Ui()
+        this.deviceProfile = new DeviceProfile()
         this.renderer = new Renderer()
+        await this.renderer.instance.init()
         this.state = new State()
         this.sound = new Sound()
 
         this.resources = new Resources( sources )
-
 
         this.mainCamera = undefined
         this.mainScene = undefined
@@ -107,6 +112,8 @@ export default class Experience extends EventEmitter {
 
             this.trigger("classesReady");
             window.dispatchEvent( new CustomEvent( "3d-app:classes-ready" ) );
+
+            this.cosmosUi = new CosmosUi()
 
             this.appLoaded = true
         } )
@@ -142,7 +149,10 @@ export default class Experience extends EventEmitter {
     }
 
     async update() {
-        this.worlds.update( this.time.delta )
+        if (this.isUpdating) return;
+        this.isUpdating = true;
+
+        await this.worlds.update( this.time.delta )
 
         this.render()
 
@@ -152,7 +162,11 @@ export default class Experience extends EventEmitter {
 
         await this.postUpdate( this.time.delta )
 
+        this.cosmosUi?.update( this.time.delta )
+
         this.debug?.stats?.update();
+        
+        this.isUpdating = false;
     }
 
     _fireReady() {

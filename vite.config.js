@@ -2,8 +2,6 @@ import restart from 'vite-plugin-restart'
 import glsl from 'vite-plugin-glsl'
 import basicSsl from '@vitejs/plugin-basic-ssl'
 import path from 'path'
-import Terminal from 'vite-plugin-terminal'
-//import obfuscatorPlugin from "vite-plugin-javascript-obfuscator";
 
 
 const dirname = path.resolve()
@@ -34,7 +32,8 @@ export default ({ mode }) => ({
     {
         outDir: '../dist',
         emptyOutDir: true,
-        sourcemap: mode !== 'production'
+        sourcemap: mode !== 'production',
+        target: 'es2022',
     },
     plugins:
     [

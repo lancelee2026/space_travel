@@ -1,0 +1,42 @@
+[
+  {
+    "id": "welcome",
+    "title": "欢迎来到深空",
+    "body": "我们将一起走近黑洞，看看光与气体如何被引力塑造。",
+    "camera": { "position": [1, 0.5, 3], "target": [0, 0, 0] }
+  },
+  {
+    "id": "black-hole",
+    "title": "黑洞",
+    "body": "中心是完全黑暗的区域，周围的光被强烈弯曲。",
+    "camera": { "position": [0.8, 0.35, 2.2], "target": [0, 0, 0] },
+    "hotspot": "event-horizon"
+  },
+  {
+    "id": "accretion-disk",
+    "title": "发光的吸积盘",
+    "body": "气体在掉入黑洞前会摩擦发热，形成明亮的光环——这是许多黑洞最明显的标志。",
+    "camera": { "position": [1.4, 0.6, 2.8], "target": [0, 0, 0] },
+    "hotspot": "accretion-disk"
+  },
+  {
+    "id": "lensing",
+    "title": "弯曲的光线",
+    "body": "注意画面远处那颗耀眼的主恒星，它发出的光芒由于黑洞巨大的质量，被极度扭曲成了拉伸的弧线。",
+    "camera": { "position": [-1.8, -0.1, 1.3], "target": [0, 0, 0] },
+    "hotspot": "sun"
+  },
+  {
+    "id": "distant-planet",
+    "title": "远处的世界",
+    "body": "望向黑洞的另一侧，有一颗土星色的行星在缓慢旋转。准备好时，点击底部的「飞近」按钮靠近它。",
+    "camera": { "position": [2.2, 1.0, 4.2], "target": [-0.25, 0.15, -0.4] },
+    "hotspot": "distant-planet"
+  },
+  {
+    "id": "complete",
+    "title": "探险完成",
+    "body": "你已经完成导览。继续自由探索，点击发光铭牌发现更多知识。",
+    "camera": { "position": [1, 0.5, 3], "target": [0, 0, 0] }
+  }
+]

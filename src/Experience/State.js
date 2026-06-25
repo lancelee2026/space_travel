@@ -28,9 +28,9 @@ export default class State {
             },
 
             bloomPass: {
-                strength: uniform( 0.217 ),
-                radius: uniform( 0.0 ),
-                threshold: uniform( 0 ),
+                strength: uniform( 0.4 ),
+                radius: uniform( 0.6 ),
+                threshold: uniform( 0.92 ),
             }
         }
     }

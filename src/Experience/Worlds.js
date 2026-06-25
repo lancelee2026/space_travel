@@ -34,8 +34,8 @@ export default class Worlds extends EventEmitter{
         this.mainWorld?.resize()
     }
 
-    update( deltaTime ) {
-        this.mainWorld?.update( deltaTime )
+    async update( deltaTime ) {
+        await this.mainWorld?.update( deltaTime )
     }
 
     postUpdate( deltaTime ) {

@@ -1,34 +1,41 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Singularity</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#0a0a12">
+    <title>深空探险 — e2n Cosmos</title>
     <link rel="icon" href="./images/icons/favicon.png" type="image/png">
+    <link rel="stylesheet" href="./assets/design-tokens.css">
+    <link rel="stylesheet" href="./assets/css/overlay.css">
+    <link rel="stylesheet" href="./assets/css/mobile.css">
     <link rel="stylesheet" href="./style.css">
-    <!-- Google Tag Manager -->
-    <script>(function (w, d, s, l, i) {
-        w[l] = w[l] || [];
-        w[l].push({'gtm.start': new Date().getTime(), event: 'gtm.js'});
-        var f = d.getElementsByTagName(s)[0], j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : '';
-        j.async = true;
-        j.src = 'https://www.googletagmanager.com/gtm.js?id=' + i + dl;
-        f.parentNode.insertBefore(j, f);
-    })(window, document, 'script', 'dataLayer', 'GTM-PQNGKVXV');</script>
-    <!-- End Google Tag Manager -->
 </head>
 <body>
-<!-- Google Tag Manager (noscript) -->
-<noscript>
-    <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PQNGKVXV"
-            height="0" width="0" style="display:none;visibility:hidden"></iframe>
-</noscript>
-<!-- End Google Tag Manager (noscript) -->
 <canvas id="preloader"></canvas>
 
 <div id="debug-panel" style="width: 400px;"></div>
 
 <canvas class="webgl"></canvas>
+
+<div id="cosmos-ui" class="cosmos-ui" hidden aria-live="polite"></div>
+
+<div id="webgpu-fallback" class="webgpu-fallback" hidden>
+    <div class="webgpu-fallback__poster" aria-hidden="true"></div>
+    <div class="webgpu-fallback__sheet" data-interactive>
+        <h1 class="webgpu-fallback__title">深空探险</h1>
+        <p class="webgpu-fallback__lead">你的浏览器暂不支持 WebGPU，无法运行实时 3D 黑洞模拟。下面是文字版导览：</p>
+        <ol class="webgpu-fallback__steps">
+            <li><strong>黑洞</strong> — 中心极暗，周围光线被引力强烈弯曲。</li>
+            <li><strong>吸积盘</strong> — 气体摩擦发热，形成明亮的光环。</li>
+            <li><strong>引力透镜</strong> — 大质量天体像透镜一样弯折背景星光。</li>
+            <li><strong>背景恒星</strong> — 恒星颜色反映表面温度，蓝热红凉。</li>
+            <li><strong>远处行星</strong> — 在很远的地方，行星缓慢绕转。</li>
+        </ol>
+        <p class="webgpu-fallback__hint">请使用 <strong>Chrome</strong>、<strong>Edge</strong> 或 <strong>Safari 17+</strong> 打开完整体验。</p>
+        <a class="cosmos-btn cosmos-btn--primary webgpu-fallback__retry" href="./">重试</a>
+    </div>
+</div>
 
 <script type="module" src="./script.js"></script>
 </body>

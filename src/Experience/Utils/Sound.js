@@ -11,7 +11,7 @@ import {
     mix, max, uint, varying, varyingProperty, Fn, struct, output, emissive, diffuseColor, PI, PI2,
     oneMinus, cos, atan, float, pass, mrt, assign, normalize, mul, log2, length, pow, smoothstep,
     screenUV, distance, instancedArray, instancedBufferAttribute, attribute, attributeArray, pointUV,
-    select, equals, deltaTime, oscSine, hash, materialColor
+    select, deltaTime, oscSine, hash, materialColor
 } from 'three/tsl'
 
 export default class Sound extends EventEmitter {

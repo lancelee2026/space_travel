@@ -12,9 +12,8 @@ import {
     normalView, reflect, normalize, positionViewDirection, asin, positionView, mx_rgbtohsv, mx_hsvtorgb, positionWorld,
     positionGeometry, modelWorldMatrix, objectPosition, userData, rotate, mat3, mul, mx_fractal_noise_vec3, faceDirection,
     inverse, modelViewMatrix, transformDirection, modelViewPosition, modelWorldMatrixInverse, cameraWorldMatrix,
-    cameraPosition, positionWorldDirection, sub, dot, Loop, length, remap, remapClamp, lengthSq, equirectUV
+    cameraPosition, positionWorldDirection, sub, dot, Loop, length, remap, remapClamp, lengthSq, equirectUV, cubeTexture
 } from 'three/tsl'
-``
 import {
     ColorRamp2_Linear, ColorRamp3_Linear, srgbToLinear, linearToSrgb, noise21, Rot, adjustTemperature, adjustHue,
     adjustSaturation, adjustLevels, fbm, hash12, brickTexture, vecToFac, mixColorHSV, emission, ColorRamp2_Constant,
@@ -96,11 +95,25 @@ export default class BlackHole extends Model {
     }
 
     setModel() {
-        // add shpere
+        // Create CubeCamera for real-time scene lensing
+        // Optimization: Throttle logic handles performance, keep 1024 for sharp planetary lensing
+        this.cubeRenderTarget = new THREE.CubeRenderTarget( 1024, {
+            format: THREE.RGBAFormat,
+            generateMipmaps: true,
+            minFilter: THREE.LinearMipmapLinearFilter,
+            magFilter: THREE.LinearFilter
+        })
+        this.cubeCamera = new THREE.CubeCamera( 0.1, 1000, this.cubeRenderTarget )
+        this.container.add( this.cubeCamera )
+        
+        const sceneEnvNode = cubeTexture( this.cubeRenderTarget.texture )
+
         const geometry = new THREE.SphereGeometry( 1, 16, 16 )
 
         const material = new THREE.MeshStandardNodeMaterial({
-            side: THREE.DoubleSide
+            side: THREE.DoubleSide,
+            transparent: true,
+            depthWrite: false
         })
 
         this.resources.items.noiseDeepTexture.wrapS = THREE.RepeatWrapping
@@ -224,18 +237,27 @@ export default class BlackHole extends Model {
             });
 
             // ==== Environment blend on remaining transparency ====
-            const dirForEnv = rayDir.mul(vec3(1, -1, 1)).xzy;
-            const env = linearToSrgb(
-                texture(this.resources.items.starsTexture, equirectUV(dirForEnv)).mul( this.state.uniforms.mainScene.environment.backgroundIntensity )
-            );
+            const bentDir = rayDir.mul(vec3(1, -1, 1)).xzy;
+            
+            // Calculate edge fade to remove hard boundary (glass edge effect)
+            const VWorld = normalize(sub(positionWorld, cameraPosition));
+            const NLocal = normalize(positionGeometry);
+            const dotNV = dot(NLocal, VWorld).negate(); // 0 at edge, 1 at center
+            
+            // Fade out the overall opacity of the shader smoothly at the grazing edge (dotNV < 0.15)
+            // By fading alpha instead of bending the ray, we eliminate parallax sampling artifacts.
+            const edgeFade = smoothstep(0.0, 0.15, dotNV);
+
+            // Sample the real-time CubeCamera texture using exclusively the bent ray
+            const env = linearToSrgb( texture(sceneEnvNode, bentDir).rgb );
 
             const trans = float(1.0).sub(alphaAcc);
             const finalRGB = mix(colorAcc, env, trans.mul(1.0));
-            // const finalAlpha = mix(alphaAcc, 1.0, 1.0); // kept for clarity, output uses color only
 
-            return srgbToLinear(finalRGB);
+            return vec4(srgbToLinear(finalRGB), edgeFade);
         })();
-        material.emissiveNode = material.colorNode
+        
+        material.emissiveNode = material.colorNode 
 
 
         // add plane
@@ -250,8 +272,9 @@ export default class BlackHole extends Model {
         // planeMaterial.emissiveNode = planeMaterial.colorNode
         // const planeMesh = new THREE.Mesh( planeGeometry, planeMaterial )
 
-        const mesh = new THREE.Mesh( geometry, material )
-        this.container.add( mesh )
+        this.mesh = new THREE.Mesh( geometry, material )
+        this.mesh.frustumCulled = false
+        this.container.add( this.mesh )
         //this.container.add( planeMesh )
         this.scene.add( this.container )
     }
@@ -372,8 +395,18 @@ export default class BlackHole extends Model {
     }
 
     update( deltaTime ) {
-        //this.cube2.rotation.y += deltaTime * 20
-        //this.cube.rotation.y += deltaTime * 30
+        if (this.mesh && this.cubeCamera) {
+            // Optimization: Throttle CubeCamera updates to 1/3 of the framerate
+            // This drastically reduces the GPU overhead of rendering the scene 6 times per frame
+            if (this.frameCount === undefined) this.frameCount = 0;
+            this.frameCount++;
+            
+            if (this.frameCount % 3 === 0) {
+                this.mesh.visible = false
+                this.cubeCamera.update( this.renderer, this.scene )
+                this.mesh.visible = true
+            }
+        }
     }
 
 }

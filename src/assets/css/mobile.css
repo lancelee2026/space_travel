@@ -1,0 +1,48 @@
+html,
+body {
+  min-height: 100dvh;
+}
+
+.cosmos-ui--mobile .cosmos-quest-dock {
+  bottom: calc(80px + var(--safe-bottom));
+  max-width: none;
+}
+
+.cosmos-ui--mobile .cosmos-tour-bar__nav .cosmos-btn {
+  flex: 1;
+  min-height: var(--btn-min-size-mobile);
+}
+
+.cosmos-ui--mobile .cosmos-hud {
+  bottom: calc(16px + var(--safe-bottom));
+}
+
+@media (min-width: 768px) {
+  .cosmos-ui__actions {
+    flex-direction: row;
+    justify-content: center;
+  }
+
+  .cosmos-hud {
+    justify-content: space-between;
+    padding: 0 24px;
+  }
+
+  .cosmos-tour-bar {
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    width: min(520px, calc(100% - 48px));
+    bottom: calc(96px + var(--safe-bottom));
+  }
+}
+
+@media (max-width: 767px) {
+  .cosmos-ui__title {
+    font-size: 1.5rem;
+  }
+
+  .cosmos-tour-bar__body {
+    font-size: 1rem;
+  }
+}

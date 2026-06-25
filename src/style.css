@@ -3,13 +3,17 @@
     margin: 0;
     padding: 0;
 
+    /* Disable selection */
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.webgl,
+#preloader
+{
     -ms-touch-action: none;
     touch-action: none;
-
-    /* Disable selection */
-    -webkit-user-select: none; /* Safari */
-    -ms-user-select: none; /* IE 10 and IE 11 */
-    user-select: none; /* Standard syntax */
 }
 
 html,
@@ -17,6 +21,8 @@ body
 {
     overflow: hidden;
     background-color: black;
+    overscroll-behavior: none;
+    touch-action: none;
 }
 
 .webgl

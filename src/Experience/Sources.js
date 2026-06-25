@@ -109,4 +109,20 @@ export default [
             "type": "texture"
         }
     },
+    {
+        name: 'saturnMap',
+        type: 'texture',
+        path: './textures/planets/2k_saturn.jpg',
+        meta: {
+            "type": "texture"
+        }
+    },
+    {
+        name: 'saturnRings',
+        type: 'texture',
+        path: './textures/planets/2k_saturn_ring_alpha.png',
+        meta: {
+            "type": "texture"
+        }
+    },
 ]

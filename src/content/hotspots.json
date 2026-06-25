@@ -1,0 +1,32 @@
+[
+  {
+    "id": "event-horizon",
+    "factId": "event-horizon",
+    "label": "事件视界",
+    "position": { "x": 0, "y": 0.1, "z": 0 }
+  },
+  {
+    "id": "accretion-disk",
+    "factId": "accretion-disk",
+    "label": "吸积盘",
+    "position": { "x": 0.45, "y": -0.05, "z": 0.45 }
+  },
+  {
+    "id": "gravitational-lensing",
+    "factId": "gravitational-lensing",
+    "label": "引力透镜",
+    "position": { "x": -0.65, "y": 0.5, "z": 0 }
+  },
+  {
+    "id": "distant-planet",
+    "factId": "distant-planet",
+    "label": "远处行星",
+    "position": { "x": -140, "y": 28, "z": -200 }
+  },
+  {
+    "id": "sun",
+    "factId": "sun",
+    "label": "遥远的主恒星",
+    "position": { "x": 0, "y": 0, "z": 0 }
+  }
+]

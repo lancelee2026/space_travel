@@ -24,8 +24,8 @@ export default class Debug {
     sizes = this.experience.sizes
 
     constructor() {
-        //this.active = window.location.hash === '#debug'
-        this.active = true
+        const params = new URLSearchParams( window.location.search )
+        this.active = params.has( 'dev' )
 
 
         if ( this.active ) {

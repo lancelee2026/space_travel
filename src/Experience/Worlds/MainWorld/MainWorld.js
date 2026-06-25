@@ -10,6 +10,10 @@ import Input from "@experience/Utils/Input.js";
 import Environment from "./Environment.js";
 
 import BlackHole from "@experience/Worlds/MainWorld/BlackHole.js";
+import StarfieldSystem from "@experience/Worlds/MainWorld/StarfieldSystem.js";
+import PlanetSystem from "@experience/Worlds/MainWorld/PlanetSystem.js";
+import SunSystem from "@experience/Worlds/MainWorld/SunSystem.js";
+import DeviceProfile from "@experience/Cosmos/DeviceProfile.js";
 
 import { color, uniform } from "three/tsl";
 
@@ -44,6 +48,20 @@ export default class MainWorld extends EventEmitter {
         //this.example = new ExampleClass( { world: this } )
         this.blackHole = new BlackHole( { world: this } )
 
+        const profile = this.experience.deviceProfile || new DeviceProfile()
+        this.starfield = new StarfieldSystem( {
+            scene: this.scene,
+            renderer: this.renderer,
+            starCount: profile.starCount,
+            shellRadius: 500,
+        } )
+
+        this.planet = new PlanetSystem( { world: this } )
+        
+        // Add Sun System in the same direction as the planet's sun direction
+        const sunPos = new THREE.Vector3(1.0, 0.2, -0.5).normalize().multiplyScalar(800)
+        this.sun = new SunSystem( { scene: this.scene, position: sunPos, resources: this.resources } )
+
         this.environment = new Environment( { world: this } )
 
         this.debugHelpers = new DebugHelpers( { world: this } )
@@ -66,11 +84,13 @@ export default class MainWorld extends EventEmitter {
         this.camera?.resize()
     }
 
-    update( deltaTime ) {
+    async update( deltaTime ) {
         if ( !this.enabled ) return
 
         this.debugHelpers?.update( deltaTime )
         this.blackHole?.update( deltaTime )
+        await this.starfield?.update( deltaTime )
+        this.planet?.update( deltaTime )
 
         this.camera?.update()
     }

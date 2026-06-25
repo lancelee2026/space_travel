@@ -77,7 +77,7 @@ export default class Resources extends EventEmitter {
 
         const ktx2Loader = new KTX2Loader();
         ktx2Loader.setTranscoderPath( '/basis/' );
-        ktx2Loader.detectSupportAsync(this.renderer);
+        ktx2Loader.detectSupport( this.renderer );
 
         this.loaders.gltfLoader.setDRACOLoader( dracoLoader )
         this.loaders.gltfLoader.setKTX2Loader( ktx2Loader );

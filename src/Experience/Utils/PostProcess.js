@@ -1,4 +1,5 @@
 import * as THREE from 'three/webgpu'
+import { RenderPipeline } from 'three/webgpu'
 import * as Helpers from '@experience/Utils/Helpers.js'
 import Experience from '@experience/Experience.js'
 import Debug from '@experience/Utils/Debug.js'
@@ -45,7 +46,7 @@ export default class PostProcess {
 
     constructor( renderer ) {
         this.renderer = renderer
-        this.composer = new THREE.PostProcessing( this.renderer );
+        this.pipeline = new RenderPipeline( this.renderer );
     }
 
     postInit() {
@@ -61,7 +62,7 @@ export default class PostProcess {
         this._sceneMainPass()
 
 
-        this.composer.outputNode = this.scenePassColorMain.add( this.bloomPassMain );
+        this.pipeline.outputNode = this.scenePassColorMain.add( this.bloomPassMain );
         //composer.outputNode = scenePassColorMain.add( ...Object.values( this.passes ) );
 
         //composer.outputColorTransform = false
@@ -163,7 +164,7 @@ export default class PostProcess {
         //     return mix( t1, t2, this.uniforms.displacementPassParams.progress )
         // } )( {} )
 
-        this.composer.outputNode = Fn( ( params ) => {
+        this.pipeline.outputNode = Fn( ( params ) => {
             const PI = float( 3.1415 );
             const angle1 = PI.mul( 0.25 );
             const angle2 = PI.mul( -0.75 );
@@ -212,7 +213,7 @@ export default class PostProcess {
 
     resize() {
         //this._calculateUVTransform()
-        this.composer.needsUpdate = true
+        this.pipeline.needsUpdate = true
     }
 
     setDebug() {
@@ -224,11 +225,11 @@ export default class PostProcess {
     }
 
     productionRender() {
-        return this.composer.render() // Render Async bug on resize
+        return this.pipeline.render()
     }
 
     debugRender() {
-        return this.composer.render() // Render Async bug on resize
+        return this.pipeline.render()
     }
 
     update( deltaTime ) {

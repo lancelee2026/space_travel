@@ -39,7 +39,7 @@ export default class Camera
     {
         this.controls = new OrbitControls(this.instance, this.canvas)
         this.controls.enableDamping = true
-        this.controls.minDistance = 0;
+        this.controls.minDistance = 1.2;
         this.controls.maxDistance = 1000;
         this.controls.enabled = true;
         this.controls.target = new THREE.Vector3(0, 0, 0);

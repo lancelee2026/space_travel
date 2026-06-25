@@ -84,7 +84,7 @@ export default class Renderer {
                     }
                 } ).on( 'change', () => {
                     if ( this.state.postprocessing ) {
-                        this.experience.postProcess.composer.needsUpdate = true
+                        this.experience.postProcess.pipeline.needsUpdate = true
                     }
                 })
 

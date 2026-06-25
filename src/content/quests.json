@@ -1,0 +1,20 @@
+[
+  {
+    "id": "find-disk",
+    "title": "找到发光的吸积盘",
+    "description": "点击吸积盘热点，了解气体如何发光。",
+    "hotspotId": "accretion-disk"
+  },
+  {
+    "id": "three-colors",
+    "title": "认识背景恒星",
+    "description": "点击恒星热点，了解颜色与温度的关系。",
+    "hotspotId": "background-stars"
+  },
+  {
+    "id": "fly-planet",
+    "title": "飞向远处的行星",
+    "description": "点击底部「飞近」按钮，靠近那颗遥远的行星。",
+    "action": "fly-planet"
+  }
+]
