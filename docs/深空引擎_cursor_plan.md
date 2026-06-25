@@ -12,115 +12,466 @@
 将此文件放在项目根目录或 docs 目录下，直接让 AI 读取此文件，并发送指令：“请完全按照 `深空引擎_cursor_plan.md` 的规范和步骤，为我从零开始编写整个项目。” AI 将根据这份详尽的约束和步骤，一步步精准还原具有同等完整度和专业体验的 WebGPU 互动科普项目。
 -->
 
-# 深空引擎 (e2n-cosmos) — Vibe Coding 实施指南
+---
+name: 深空引擎 WebGPU (Cursor 完善版)
+overview: 以 Singularity 为 WebGPU 基座，独立 repo + Cloudflare Pages 部署，分 5 个技术里程碑合并星场、Bloom 与可选行星；产品定位为儿童互动天文科普（探索、导览、小任务、家长共读），非技术研究。叠加 .agents UI/UX skills 规范 overlay；全站禁止 emoji、统一天文 SVG 图标组；mobile-first 沉浸式体验与桌面同等优先级。 realistic 7–9 天。
+todos:
+  - id: phase0-clone
+    content: Clone Singularity → 新 repo e2n-cosmos，本地 0 号检查点；记录导览机位
+    status: pending
+  - id: phase1-edu-layer
+    content: three r183+ + 科普发现层（DiscoveryOverlay、GuidedTour、Quest、ParentMode、Share、MobileShell、DeviceProfile）
+    status: pending
+  - id: content-scaffold
+    content: content/*.json + docs/SCIENCE_CONTENT.md + UI_UX_GUIDELINES.md + MOBILE_UX.md
+    status: pending
+  - id: design-tokens
+    content: ckm-design-system 生成 assets/design-tokens.css（Kids Learning 配色 + Claymorphism HUD）
+    status: pending
+  - id: icon-system
+    content: assets/icons/ 统一天文 SVG 图标组（≥12 核心图标），全站禁用 emoji
+    status: pending
+  - id: phase2-starfield
+    content: StarfieldSystem 球壳 compute 粒子 + 恒星温度热点 +「认 3 色星」任务
+    status: pending
+  - id: phase3-bloom
+    content: RenderPipeline + bloom() TSL 后期；移动 Bloom preset；导览 wow 验收
+    status: pending
+  - id: phase4-planet
+    content: TSL 远景行星 + 飞近任务（勿 import WebGL procedural-planets）
+    status: pending
+  - id: phase5-deploy
+    content: R2 HDRI、CF Pages、localStorage 进度、?tour=1 深链、fallback 展板、真机验收
+    status: pending
+isProject: false
+---
 
-> 本文档基于实际开发落地的最终代码仓反向提取而成。它合并了技术选型、UI/UX 规范、移动端约束以及大量 WebGPU 性能优化的血泪经验。请在每次 Vibe Coding 对话中引用本文件作为**绝对参考系**。
+# 深空引擎站点 — 完整实施 Plan（唯一执行文档）
+
+> 本文档为 **唯一执行来源**，已合并技术鉴定、科普交互、SVG 规范与移动端沉浸式体验要求。
 
 ---
 
-## 一、 产品定位与愿景
+## 一、对话记录鉴定（真伪与缺口）
 
-`space.e2n.studio` 是一个跑在浏览器里的「深空科技馆」，产品定位于**儿童互动天文科普**，不追求科研级物理模拟，而是追求极致的视觉震撼与寓教于乐。
+### 结论：方向 80% 正确，但有几处会直接导致 vibe coding 翻车
 
-**核心功能矩阵**：
-1. **自由探索**：单指拖拽视角，双指缩放，平滑的阻尼体验。
-2. **知识热点 (Hotspots)**：点击 3D 场景中的浮动节点，底部弹出详情卡片。
-3. **分步导览 (Guided Tour)**：一键进入电影级运镜导览，跟随视角自动切换知识卡片。
-4. **小任务 (Quests)**：如“查看主恒星”、“飞近远处行星”，带有完成徽章与进度反馈。
-5. **家长共读模式**：为儿童提供大白话解释，家长可点击展开更硬核的天文物理学细节（如洛希极限、史瓦西半径）。
-6. **隐藏标签 (沉浸模式)**：一键隐藏所有 UI 热点，专心欣赏黑洞。
+| 论断 | 鉴定 | 影响 |
+|------|------|------|
+| `MisterPrada/singularity` 可作基座 | **真** — 290 stars，Live demo，Three.js + TSL + WebGPU，纯 raymarching 黑洞 | 正确选型 |
+| `dgreenheck/webgpu-galaxy` 可作星场参考 | **真** — MIT 许可，TSL compute + `instancedArray`，已含 Bloom + Tweakpane | 正确参考 |
+| r183 `PostProcessing` → `RenderPipeline` | **真** — [PR #32789](https://github.com/mrdoob/three.js/pull/32789)，API 相同 | AI 生成代码必须用新名 |
+| r184 大量 mesh 首帧卡顿 ~15s | **真但对此项目相关性低** — [#33685](https://github.com/mrdoob/three.js/issues/33685)；Singularity 几乎无 mesh，是单 sphere raymarch | 星场粒子要用 **InstancedMesh/Sprite 共享材质**，禁止每颗星 unique `colorNode` |
+| `dgreenheck/threejs-procedural-planets` vibe 友好 | **半假** — 该项目是 **WebGL + GLSL 字符串**，不是 TSL/WebGPU；直接 merge 会双渲染器地狱 | 行星阶段应改做 **TSL 噪声球体** 或 **raymarch 远景行星**，勿整仓 import |
+| Poly Haven HDRI 提升真实感 | **真** | 8K EXR 不要打进 bundle，走 R2 CDN |
+| 「2-3 天完整愿景」 | **偏乐观** — C 档（星场 + Bloom + 行星 + 部署 + 科普 UX + 移动端） realistic **7–9 天** | 见第十节时间线 |
 
----
+### 两段 AI 对话都没说的 4 个硬坑
 
-## 二、 核心技术栈与工程约束
-
-### 1. 基础架构
-- **核心库**：`three@^0.183.0`，全程使用 `three/webgpu` 和 `three/tsl`，**彻底抛弃旧版 WebGLRenderer**。
-- **构建工具**：Vite (`vite@^5.4.14`)。
-- **UI 层**：纯 HTML/CSS + 原生 JavaScript 类。**绝对禁止引入 React/Vue 等框架**，避免与 WebGPU 的 `requestAnimationFrame` 主循环产生渲染冲突或生命周期地狱。
-
-### 2. 性能与兼容性硬约束 (血泪教训)
-- **移动端发热控制**：移动端设备强制将 `devicePixelRatio` 锁定为 `1.0`（`isMobile ? 1 : Math.min(window.devicePixelRatio, 2)`）。体积光线追踪极为消耗 GPU，如果不锁 DPR，手机会在一分钟内发烫降频。
-- **CubeCamera 性能节流**：引力透镜效果依赖隐藏的 `CubeCamera` 获取实时反射。**禁止每帧更新**！必须在 `update(deltaTime)` 循环中加入节流逻辑（例如每 3 帧更新一次），并将 `CubeRenderTarget` 分辨率保持在 `1024` 以兼顾质量与性能（降低到 512 会导致背景木星/土星等边缘出现严重锯齿断层）。
-- **静态资源打包陷阱**：像 `2k_saturn.jpg` 这样通过 JS 字符串路径动态获取的超高清贴图，**必须放在 `static/`（配置为 Vite 的 `publicDir`）目录下**。如果放在 `src/` 下，Vite 在执行 `npm run build` 时会因为没有代码层的显式 `import` 而将它们丢弃，导致线上部署后一直卡在无尽的 Loading 动画。
-
-### 3. UI / UX 规范
-- **禁止使用 Emoji**：所有图标必须使用自定义的 SVG 矢量代码库（统一存放于 `icons.js` 中，包含 explore, tour, share, quest, eye, planet 等）。保证全站视觉的严肃与高级感。
-- **移动端优先 (Mobile-first)**：
-  - `<meta name="viewport" content="... maximum-scale=1.0, user-scalable=no">` 必须带上，同时对 `canvas` 设置 `touch-action: none` 彻底封死网页原生的双指放大。
-  - `min-height: 100dvh` 与安全区适配 `env(safe-area-inset-bottom)` 是标配。
-  - **组件布局**：控制台 (HUD) 无论 PC 还是移动端，统一保持在屏幕底部正中居中（如同 Mac Dock）。任务悬浮窗统一放置于屏幕左上角。
-- **CSS 类名规范**：严格使用 BEM 变体命名，如 `.cosmos-ui`, `.cosmos-hud`, `.cosmos-hud__btn`, `.cosmos-btn--primary`，配以 CSS 变量进行颜色/间距控制。
+1. **Singularity 无开源 License**（GitHub `license: null`）— 只能作学习/参考 fork；公开部署前建议给作者发 issue 要许可，或重写核心 shader（Three.js Roadmap 有完整教程可对照）。
+2. **Singularity 已自带 Tweakpane + 内置 bloom/星场**（`package.json` 含 `tweakpane@4`，topics 含 `bloom`；[`Renderer.js`](https://github.com/MisterPrada/singularity/blob/master/src/Experience/Renderer.js) 直接用 `renderAsync`，非 `RenderPipeline`）— 不是「从零加 Bloom」，而是 **升级 three 版本 + 决定是否迁移 RenderPipeline**。
+3. **Singularity 锁在 three `^0.180.0`（r180）** — 要用 `RenderPipeline` 需升到 **r183+**（建议 `^0.183.0` 或 `^0.184.0`），升级可能破坏现有 TSL 节点，需单独 checkpoint。
+4. **与 [e2n_landingpage](file:///Users/lancelee/Desktop/e2n_landingpage) 完全无关** — 现有官网是 React + CSS 营销站，无 WebGL；独立 repo 决策正确，不会影响 e2n.studio 首页 LCP/转化。
+5. **CubeCamera 性能节流大坑** — 引力透镜效果依赖隐藏的 `CubeCamera` 获取实时反射。**禁止每帧更新**！必须在 `update(deltaTime)` 循环中加入节流逻辑（例如每 3 帧更新一次），否则会造成严重卡顿；分辨率建议保持 `1024`，过低会导致背景行星边缘锯齿严重。
+6. **Vite 静态资源打包陷阱** — 通过 JS 字符串动态加载的资产（如高清贴图 `2k_saturn.jpg`）不能放 `src/`，否则 Vite `npm run build` 打包时会被丢弃。必须移至公共目录 `static/` 并配置 `publicDir`，确保线上部署不报 404。
 
 ---
 
-## 三、 分步开发里程碑 (Implementation Plan)
+## 二、产品定位（已确认）
 
-### Phase 1: 骨架与引擎初始化
-- 搭建 Vite + Three.js(WebGPU) 项目模板。
-- 配置 WebGPURenderer，并添加 `WebGPU Fallback` UI，引导不支持的浏览器用户（如旧版 Chrome）查看静态海报。
-- 实现带有平滑阻尼的 `OrbitControls` 或自定义相机控制器。
-
-### Phase 2: 黑洞核心 (Raymarching) 与星场
-- 引入光线追踪黑洞着色器（利用 TSL 节点）。包含事件视界与吸积盘。
-- 实现 `CubeCamera` 与 `CubeRenderTarget` 引力透镜扭曲效果（注意实施 1/3 帧率节流优化）。
-- 使用 `BufferGeometry` + `Points` 构建包含 6 万颗粒子的银河系背景。通过给顶点传入离散颜色值（蓝、白、橙红）来表现不同恒星的表面温度。
-
-### Phase 3: 科普发现层 (UI Overlay)
-- 开发基于 Vanilla JS 的组件：`CosmosUi`, `DiscoveryOverlay`, `GuidedTour`, `QuestTracker`。
-- 将热点数据 (`facts.json`, `quests.json`) 与 3D 坐标绑定。
-- 实现点击热点相机自动旋转并拉近，同时从底部升起知识卡片（BottomSheet CSS 动画）。
-- 添加全局状态栏：自由探索、开启导览、分享进度、**隐藏标签 (eye icon)**。
-
-### Phase 4: 添加远景行星与材质
-- 引入外部高清贴图（如 2K 的土星本体及带 Alpha 通道的星环贴图）。
-- 在黑洞远处放置基于标准 PBR 材质构建的气态巨行星，通过引力透镜观察其被扭曲的绝美画面。
-- 增加对应的交互任务：“飞近远处的行星”。
-
-### Phase 5: 部署与 Cloudflare Pages 适配
-- 确保 `vite.config.js` 设置正确的 `base: './'`（若有需要），并检查所有的 `.jpg`、`.glb` 文件均位于正确的公共静态目录。
-- 部署到 Cloudflare Pages，设置构建命令为 `npm run build`，输出目录为 `dist`。
-- 在静态目录添加 `_redirects` 文件 (`/* /index.html 200`) 支持 SPA fallback，并提供 `_headers` 文件。
-
----
-
-## 四、 核心科普文案配置 (参考模板)
-
-**1. 任务系统配置 (`src/content/quests.json`)**
-务必保证 `hotspotId` 在场景中有对应的节点，避免成为无法完成的死局任务：
-```json
-[
-  {
-    "id": "find-disk",
-    "title": "找到发光的吸积盘",
-    "description": "点击吸积盘热点，了解气体如何发光。",
-    "hotspotId": "accretion-disk"
-  },
-  {
-    "id": "main-star",
-    "title": "查看主恒星",
-    "description": "点击主恒星热点，把恒星的知识告诉爸爸妈妈。",
-    "hotspotId": "sun"
-  }
-]
+```mermaid
+flowchart TB
+  subgraph product [产品 = 深空互动科普馆]
+    Explore[自由探索：拖拽视角]
+    Discover[点击发现：热点知识卡]
+    Tour[导览模式：5步故事线]
+    Quest[小任务：找吸积盘/认恒星色]
+    Parent[家长共读：展开科学解释]
+    Share[分享：完成徽章/链接]
+    Immersive[隐藏标签：纯净观赏模式]
+  end
+  subgraph engine [WebGPU 引擎层]
+    BH[黑洞 raymarch]
+    Stars[GPU 星场]
+    Bloom[HDR Bloom]
+    Planet[可选远景行星]
+  end
+  subgraph placement [部署]
+    Repo[独立 GitHub repo e2n-cosmos]
+    CF[Cloudflare Pages]
+    Domain["space.e2n.studio"]
+  end
+  engine --> product
+  product --> placement
 ```
 
-**2. 知识库配置 (`src/content/facts.json`)**
-采用双轨文案：`child` (大白话比喻) + `parent` (硬核科学解释)。
-*注：务必遵循科学严谨性，例如黑洞不是“吸尘器”，远处的行星应描述为“气态巨行星”而非“类似地球的岩石世界”。*
-```json
-{
-  "event-horizon": {
-    "title": "事件视界",
-    "child": "这是黑洞的「边界线」。一旦越过，连光也逃不出来，就像瀑布边缘的水流。",
-    "parent": "事件视界是广义相对论预言的零超曲面：对远处观测者而言，任何从此半径内向外的信号都无法逃逸。其大小与黑洞质量成正比（史瓦西半径 rs = 2GM/c²）。"
-  },
-  "distant-planet": {
-    "title": "远处的行星",
-    "child": "在黑洞很远的地方，有一颗带巨大光环的行星。它是气态巨行星，就像我们太阳系里的土星一样，并没有坚硬的固体表面。",
-    "parent": "这颗系外气态巨行星通过极远处的主恒星照亮。气态行星若拥有如此壮观的星环系统，通常由无数冰块、岩石碎屑在洛希极限外围绕其赤道运转形成。"
-  }
-}
+**一句话**：`space.e2n.studio` = 浏览器里的「深空科技馆」— 小孩自己点、自己发现；家长可切换「共读模式」看稍深的解释。视觉震撼是**教具**，不是终点。
+
+- **不是**研究 WebGPU 标准或写论文级物理模拟
+- **是**儿童互动天文科普：fullscreen 体验 + 参数可调（dev）+ 部署后可分享
+- **MVP 可发布点**：Phase 3 结束 — 视觉完整 + 导览 + 热点 + 任务 + 家长模式 + 分享（行星为加分项）
+
+**科普原则**（写入 `docs/SCIENCE_CONTENT.md`）：
+- 单条知识点：**1 句大白话 + 1 句类比**（如「事件视界像河流里的漩涡边缘」）
+- 禁止术语堆砌；首次出现专有名词附带 **「这是什么？」** 展开
+- 中文为主；8–12 岁可读，家长模式可 +2 段科学细节
+- 所有文案与 `docs/ENGINEERING_CONSTRAINTS.md` 一样，每次 vibe coding 前粘贴
+
+---
+
+## 三、推荐项目结构
+
+新建 repo（建议名 `e2n-cosmos` 或 `deep-space-engine`）：
+
+```
+e2n-cosmos/
+├── src/
+│   ├── main.js                 # 入口：async init WebGPU
+│   ├── experience/
+│   │   ├── Experience.js       # 从 Singularity 精简
+│   │   ├── Renderer.js         # WebGPURenderer + RenderPipeline
+│   │   ├── BlackHoleWorld.js   # 黑洞 raymarch（Singularity Worlds/TSL）
+│   │   ├── StarfieldSystem.js  # 从 webgpu-galaxy 抽取的 compute 粒子
+│   │   ├── PlanetSystem.js     # Phase 4：TSL 噪声球（可选）
+│   │   ├── DeviceProfile.js    # 设备档位：starCount / pixelRatio / 特效
+│   │   └── ui/
+│   │       ├── LoadingScreen.js
+│   │       ├── DevPanel.js              # Tweakpane，?dev=1 才显示
+│   │       ├── DiscoveryOverlay.js      # 热点 + 知识卡浮层
+│   │       ├── GuidedTour.js            # 5 步导览（相机 + 文案同步）
+│   │       ├── QuestTracker.js          # 小任务进度条/徽章
+│   │       ├── ParentModeToggle.js      # 家长共读开关
+│   │       ├── ShareCompletion.js       # Web Share API / 复制链接
+│   │       └── MobileShell.js           # safe-area、dvh、底部 HUD、手势路由
+│   ├── content/
+│   │   ├── hotspots.json
+│   │   ├── tour-steps.json
+│   │   ├── quests.json
+│   │   └── facts.json                   # 儿童版 / 家长版双文案
+│   └── shaders/                # 若 TSL 文件过长可拆分
+├── assets/
+│   ├── design-tokens.css       # 来自 ckm-design-system
+│   ├── css/
+│   │   ├── overlay.css
+│   │   └── mobile.css
+│   └── icons/
+│       ├── sprite.svg          # 或 navigation.svg / cosmos.svg / quest.svg
+│       └── ICON_MANIFEST.md
+├── public/
+│   └── _headers                # COOP/COEP 如需要；缓存策略
+├── wrangler.toml               # Pages: pages_build_output_dir = "dist"
+├── vite.config.js
+├── package.json
+├── docs/
+│   ├── ENGINEERING_CONSTRAINTS.md
+│   ├── SCIENCE_CONTENT.md
+│   ├── UI_UX_GUIDELINES.md
+│   ├── MOBILE_UX.md
+│   └── ATTRIBUTION.md
+└── README.md
 ```
 
-> **最终忠告给未来的 AI Agent**：当你接手读取此文档后，不要试图引入复杂的前端框架，紧扣 Three.js WebGPU 接口，用最原始纯粹的 JS 控制 DOM 状态。你的代码应当如同太空一般深邃且利落。
+**技术栈说明**：Singularity 为 **vanilla JS + Vite**，科普 overlay 用 **纯 HTML/CSS + GSAP**（不引入 React/shadcn，避免与 WebGPU 主循环耦合）；样式遵循 [ckm-ui-styling](.agents/skills/ckm-ui-styling/SKILL.md) 与 [ckm-design-system](.agents/skills/ckm-design-system/SKILL.md) 的 token 规范。
+
+**工程约束**（写入 `docs/ENGINEERING_CONSTRAINTS.md`，每次 vibe coding 前粘贴）：
+
+```markdown
+# 工程约束（2026-06）
+
+1. three >= 0.183.0；统一 `import ... from 'three/webgpu'` + `three/tsl`
+2. 必须 `await renderer.init()` 后再渲染
+3. 后期：`RenderPipeline`（禁止 EffectComposer / 旧 PostProcessing 名）
+4. TSL 用 Fn()/uniform/instancedArray；禁止 GLSL 字符串（行星阶段亦然）
+5. 粒子系统：单一 SpriteNodeMaterial + storage buffer；禁止 per-instance unique colorNode
+6. 首帧：`renderer.compileAsync(scene, camera)` + loading UI；可选 `asyncCompilation: true`（r184+）
+7. 部署：Cloudflare Pages 纯静态；>5MB 资产走 R2 public URL
+8. 儿童模式：默认隐藏 Tweakpane；`prefers-reduced-motion` 停动画
+9. 视觉专业度：全站禁止 emoji；图标仅用 assets/icons/ 统一天文 SVG 组（一致 stroke/尺寸/currentColor）
+10. mobile-first：先 320–430px 布局；100dvh + viewport-fit=cover + safe-area；必读 docs/MOBILE_UX.md
+11. 移动性能：DeviceProfile 分档 starCount/pixelRatio；帧率 <24fps 自动降档
+12. 科普层与 WebGPU 层解耦：overlay 纯 DOM，通过 EventBus 与 Experience 通信
+13. 知识卡文案只读 content/*.json，禁止硬编码在 shader 或 JS 逻辑里
+14. 儿童版单卡正文 ≤ 80 字；家长扩展 ≤ 200 字
+15. 分享/进度仅 localStorage；不上传个人信息
+16. UI 实施前读取 docs/UI_UX_GUIDELINES.md；触控与 a11y 以 ui-ux-pro-max 为准
+17. 新 UI 元素须先在 ICON_MANIFEST.md 登记图标语义，禁止临时外链图标
+18. canvas 与 overlay 手势分层：导览/Sheet 打开时禁用 canvas pointer-events
+19. 发热与性能红线：移动端设备强制锁定 `devicePixelRatio = 1` 并在 DeviceProfile 中自动识别降级，避免 GPU 过热发烫。
+20. 统一排版与布局：控制台 (HUD) 在 PC 与移动端均需在屏幕正下方居中；小任务悬浮窗统一位于左上角；需提供“隐藏标签”切换按钮（小眼睛图标）。
+```
+
+---
+
+## 四、`.agents` Skills 借调与视觉规范
+
+每次做 **overlay / 科普 UI** 前，按此顺序激活：
+
+| 顺序 | Skill | 用途 |
+|------|-------|------|
+| 1 | [ui-ux-pro-max](.agents/skills/ui-ux-pro-max/SKILL.md) | **Kids Learning (#152)** + **Educational App (#9)** + **Museum/Gallery (#76)**；触控 44px、reduced-motion、渐进披露 |
+| 2 | [ckm-design-system](.agents/skills/ckm-design-system/SKILL.md) | 生成 `assets/design-tokens.css`（primitive→semantic→component） |
+| 3 | [ckm-ui-styling](.agents/skills/ckm-ui-styling/SKILL.md) | overlay 状态、对比度、响应式 |
+| 4 | [ckm-brand](.agents/skills/ckm-brand/SKILL.md) | 可选：e2n 子域 footer 品牌一致性 |
+| 5 | [tailwind-responsive.md](.agents/skills/ckm-ui-styling/references/tailwind-responsive.md) | 移动端断点清单（320/640/1024；44px 触控区） |
+
+**ui-ux-pro-max 移动端必查**（Phase 1 实施前）：
+```bash
+python scripts/search.py "mobile immersive fullscreen touch orbit" --domain ux
+python scripts/search.py "safe-area viewport dvh reduced-motion" --domain web
+python scripts/search.py "bottom sheet modal swipe dismiss" --domain ux
+```
+
+**HUD 配色**：主色 `#2563EB` + accent `#F59E0B` + 强调 `#EC4899`；卡片 Claymorphism + `backdrop-blur`（WCAG 4.5:1）；动效 soft press 200ms。
+
+**SVG 图标组（硬约束）**：
+- 全站禁止 emoji；唯一来源 `assets/icons/`
+- 统一 24×24 视口、`stroke-width: 1.5`、`currentColor`、round cap/join
+- 语义须天文相关；Phase 1 交付 ≥12 个核心图标
+- 内联 SVG 或 sprite `<use>`；禁止 Unicode 符号冒充图标
+
+**UI_UX_GUIDELINES.md 硬规则**：
+- 可点元素 ≥ 44×44px；图标按钮 `aria-label`
+- 知识卡渐进披露；导览同时仅 1 张卡
+- `prefers-reduced-motion`：导览相机 instant cut
+- fallback 页：静态科普海报 + 文字版导览
+
+---
+
+## 五、移动端沉浸式体验（与桌面同等优先级）
+
+**mobile-first**：先设计 320–430px HUD，再扩展桌面。
+
+```mermaid
+flowchart TB
+  subgraph mobileShell [MobileShell]
+    Viewport["viewport-fit=cover + 100dvh"]
+    SafeArea["env safe-area-inset"]
+    Canvas["WebGPU 全屏 canvas"]
+    BottomHUD["底部拇指区 HUD"]
+    Sheet["知识卡 Bottom Sheet"]
+  end
+  subgraph gestures [触控分层]
+    ExploreMode["探索：单指 orbit + 双指 pinch"]
+    TourMode["导览：禁 orbit，上一步/下一步"]
+    HotspotTap["热点：tap 打开 sheet"]
+  end
+  Canvas --> gestures --> BottomHUD --> Sheet
+```
+
+| 规则 | 实现 |
+|------|------|
+| 全屏沉浸 | `viewport-fit=cover`；`min-height: 100dvh` |
+| Safe Area | `env(safe-area-inset-*)`；主 CTA 距底部手势条 ≥ 16px |
+| 拇指区 | 核心操作在底部 1/3 |
+| 知识卡 | 手机 Bottom Sheet（下滑关闭）；桌面居中卡片 |
+| 字体 | 正文 ≥16px；导览字幕 18–20px |
+| 探索 | 单指 orbit、双指 pinch；`touch-action: none` on canvas |
+| 导览 | 锁定 orbit；按钮 ≥48px |
+| 冲突 | Sheet/导览打开时 canvas `pointer-events: none` |
+
+**DeviceProfile 分档**：
+
+| 档位 | 策略 |
+|------|------|
+| High | 300k 星、pixelRatio ≤2、全 Bloom |
+| Mid | 80k–120k 星、pixelRatio ≤1.5 |
+| Low | 40k 星、简化后期；帧率 <24fps 3s 自动降档 |
+
+Phase 1 移动必交付：`MobileShell`、底部 HUD、Bottom Sheet、`navigator.share`、320/390/430px 验收。
+
+---
+
+## 六、分阶段实施（严格渐进，禁止一次让 AI 写全栈）
+
+### Phase 0 — 基座跑通（Day 0，~2h）
+
+```bash
+git clone https://github.com/MisterPrada/singularity.git e2n-cosmos
+cd e2n-cosmos && npm i && npm run dev
+```
+
+验收：
+- Chrome/Edge 可见引力透镜 + 吸积盘；WebGPU backend 确认
+- 记录 three 版本、首帧加载时间
+- **记录 3–5 个导览机位**（供 Phase 1）
+
+随后：复制到新 repo，去掉 obfuscate/无用插件；保留 `Experience/` 架构。
+
+---
+
+### Phase 1 — three 升级 + 科普发现层（Day 1–2）
+
+```bash
+npm install three@^0.183.0
+```
+
+- `PostProcessing` → `RenderPipeline`（若存在）
+- 修 TSL 编译错误
+
+**科普 UI 交付物（不可砍）**：
+
+1. 入口：「深空探险」→ **自由探索** / **开始导览**
+2. `DiscoveryOverlay`：4 热点（事件视界、吸积盘、引力透镜、背景恒星）
+3. `GuidedTour`：5 步 + GSAP 相机 + 底部文案
+4. `ParentModeToggle`：「告诉爸爸妈妈更多」
+5. `QuestTracker`：2 任务（找吸积盘、认 3 色星）
+6. `ShareCompletion`：徽章 + `navigator.share` / 复制链接
+7. `MobileShell` + `DeviceProfile` 基础分档
+8. `design-tokens.css` + `assets/icons/`（≥12 SVG）+ 4 份 docs
+
+**Vibe coding prompt（Phase 1）**：
+> 在 vanilla JS overlay 实现 DiscoveryOverlay + MobileShell：mobile-first 320px；Bottom Sheet 知识卡；导览锁定 orbit；读 `content/hotspots.json`；样式用 design-tokens + mobile.css；遵循 UI_UX_GUIDELINES + MOBILE_UX；不修改 BlackHole TSL。
+
+---
+
+### Phase 2 — GPU 背景星场（Day 2–3）
+
+从 [webgpu-galaxy/galaxy.js](https://github.com/dgreenheck/webgpu-galaxy/blob/main/galaxy.js) 抽取，改为 **静态球壳星场**：
+
+- `starCount` 跟 DeviceProfile 联动（150k–300k 桌面；移动 80k–120k）
+- 均匀球壳 + 黑体色温（3000K–30000K）
+- `renderOrder = -1`；同 scene 同 RenderPipeline
+- **更新 `hotspots.json`**：「恒星颜色 = 温度」热点
+
+```mermaid
+flowchart TB
+  computeInit[computeInit 球壳分布]
+  computeUpdate[computeUpdate 慢速自转]
+  blackHole[BlackHole raymarch]
+  pipeline[RenderPipeline]
+  computeInit --> computeUpdate --> starSprites[SpriteNodeMaterial]
+  starSprites --> pipeline
+  blackHole --> pipeline
+  pipeline --> bloomPass[bloom] --> screen[Canvas]
+```
+
+验收：星场可见；MacBook >30fps；移动 Mid 档 ≥24fps。
+
+---
+
+### Phase 3 — RenderPipeline + Bloom（Day 3–4）
+
+```javascript
+import { RenderPipeline } from 'three/webgpu';
+import { pass, bloom } from 'three/tsl';
+
+const scenePass = pass(scene, camera);
+const pipeline = new RenderPipeline(renderer);
+pipeline.outputNode = scenePass.add(bloom(scenePass, 0.4, 0.6, 0.85));
+```
+
+- `renderAsync` → `pipeline.render()`
+- dev 面板：bloom / exposure / 吸积盘 uniform
+- 移动 Bloom preset；导览第 3 步 wow 时刻；移动先保 24fps
+
+验收：cinematic glow；无 double tone-mapping；导览全程稳定可读。
+
+---
+
+### Phase 4 — 可选行星「飞近」（Day 5–6，可砍）
+
+**不要** import `threejs-procedural-planets`（WebGL）。
+
+| 方案 | 做法 |
+|------|------|
+| A 远景行星（推荐） | raymarch TSL distant sphere + 噪声 albedo |
+| B 近景轨道 | MeshStandardNodeMaterial + GSAP 相机 |
+
+儿童向选 **A**；「飞近」作为 **可选探索任务**；导览可加第 6 步「远处的世界」。
+
+---
+
+### Phase 5 — 资产 + 部署（Day 7–9）
+
+**HDRI（可选）**：[Poly Haven starmap_2020](https://polyhaven.com/a/starmap_2020) → R2 `https://assets.e2n.studio/cosmos/starmap.hdr`
+
+**Cloudflare Pages**：
+```toml
+name = "e2n-cosmos"
+pages_build_output_dir = "dist"
+```
+
+- Build: `npm run build`；Output: `dist`
+- `space.e2n.studio` CNAME
+- `localStorage` 进度；`?tour=1` 深链
+- WebGPU fallback：静态 poster + 移动 Bottom Sheet 文字导览（[ckm-banner-design](.agents/skills/ckm-banner-design/SKILL.md) 可辅助 poster）
+
+---
+
+## 七、Vibe Coding 节奏
+
+```mermaid
+flowchart TD
+  A[粘贴 ENGINEERING_CONSTRAINTS.md] --> B[单文件单目标 prompt]
+  B --> C[npm run dev 目视验收]
+  C --> D{通过?}
+  D -->|是| E[git commit 里程碑]
+  D -->|否| F[回滚到上一 commit]
+  F --> B
+  E --> G[下一 Phase]
+```
+
+**禁止**：
+- 一次 prompt 写完全栈
+- 混用 `three` 与 `three/webgpu`
+- `EffectComposer` / GLSL `onBeforeCompile` / emoji 作图标
+
+**推荐资源**：
+- [dgreenheck/webgpu-claude-skill](https://github.com/dgreenheck/webgpu-claude-skill)
+- [Three.js Roadmap 黑洞教程](https://threejsroadmap.com/blog/raytracing-a-black-hole-with-webgpu)
+
+---
+
+## 八、风险与降级
+
+| 风险 | 降级方案 |
+|------|----------|
+| three 升级破坏 Singularity TSL | 锁 r180；Bloom 留 shader 内，跳过 RenderPipeline |
+| 低端 GPU 帧率 <20 | 星数减半；关 cloud；降 pixelRatio；DeviceProfile Low 档 |
+| Singularity 许可不明 | 私有演示；或按 Roadmap 重写 raymarch |
+| iOS WebGPU 不稳定 | `navigator.gpu` 检测；fallback poster + Bottom Sheet 文字导览 |
+| 触控与 orbit 冲突 | 导览/Sheet 打开时 canvas `pointer-events: none` |
+
+---
+
+## 九、与 e2n 品牌的关系（可选，非 MVP）
+
+- 官网 [e2n.studio](https://e2n.studio) **不进主导航**
+- footer 或 social 链到 `space.e2n.studio` 作彩蛋体验
+- 无需 i18n / Pages Functions / Supabase
+
+---
+
+## 十、时间线与验收清单
+
+| 天 | 里程碑 | 交付物 |
+|----|--------|--------|
+| 0 | Phase 0 | 本地黑洞 + 导览机位 |
+| 1–2 | Phase 1 | three 升级 + 科普发现层全套 + 移动壳 |
+| 2–3 | Phase 2 | GPU 星场 + 恒星科普热点 |
+| 3–4 | Phase 3 | Bloom + 导览 wow 验收 |
+| 5–6 | Phase 4 | 远景行星（可选）+ 导览扩展 |
+| 7–9 | Phase 5 | R2 + CF Pages + 分享深链 + fallback |
+
+### 科普体验
+- [ ] 8 岁用户无需说明即可完成 5 步导览
+- [ ] 4 热点均有儿童版 + 家长版文案
+- [ ] 2 任务可完成并有徽章/动效反馈
+- [ ] 分享链接可一键发出（或复制 toast）
+
+### UI/UX
+- [ ] 按钮触控区 ≥ 44px；知识卡对比度 ≥ 4.5:1
+- [ ] `prefers-reduced-motion` 动效降级
+- [ ] 全站零 emoji；图标均来自 `assets/icons/` 且风格一致
+
+### 移动端（必过）
+- [ ] 320/390/430px 无横滚；正文 ≥16px
+- [ ] 底部 HUD 拇指区；主按钮 ≥48px；safe-area 无遮挡
+- [ ] Bottom Sheet 可下滑关闭；导览时 orbit 锁定
+- [ ] iPhone Safari + Android Chrome 完成导览；分享面板可调起
+- [ ] 中端手机 ≥24fps；横竖屏切换锚点不错位
+
+### 技术
+- [ ] 生产 URL 首屏 <5s（含 compileAsync）
+- [ ] 无 dev 面板、无 console 报错
+- [ ] `ATTRIBUTION.md` 含 Singularity + webgpu-galaxy + Three.js
