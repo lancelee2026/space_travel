@@ -44,6 +44,14 @@
   transition: opacity 0.3s ease;
 }
 
+.cosmos-hotspot-layer.is-hidden {
+  opacity: 0;
+}
+
+.cosmos-hotspot-layer.is-hidden .cosmos-hotspot {
+  pointer-events: none !important;
+}
+
 .cosmos-hud[hidden],
 .cosmos-quest-dock[hidden] {
   display: none !important;

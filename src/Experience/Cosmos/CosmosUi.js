@@ -151,13 +151,11 @@ export default class CosmosUi {
         if ( isHidden ) {
             btn.setAttribute( 'aria-pressed', 'false' )
             btn.innerHTML = icon( 'eyeOff' )
-            this.discovery.layer.style.opacity = '1'
-            this.discovery.layer.style.pointerEvents = 'auto'
+            this.discovery.layer.classList.remove( 'is-hidden' )
         } else {
             btn.setAttribute( 'aria-pressed', 'true' )
             btn.innerHTML = icon( 'eye' )
-            this.discovery.layer.style.opacity = '0'
-            this.discovery.layer.style.pointerEvents = 'none'
+            this.discovery.layer.classList.add( 'is-hidden' )
         }
     }
 
